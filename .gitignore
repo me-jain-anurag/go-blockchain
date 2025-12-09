@@ -1,0 +1,7 @@
+# Binaries
+/bin/
+blockchain
+*.exe
+
+# OS specific
+.DS_Store
