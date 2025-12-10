@@ -1,7 +1,6 @@
 package core
 
 import (
-	"crypto/sha256"
 	"fmt"
 	"time"
 )
@@ -16,50 +15,51 @@ type Block struct {
 }
 
 // Header contains the metadata and cryptographic information for a block.
-// It separates the metadata from the actual transaction data structure (though in this simple version, Data is included here).
+// It separates the metadata from the actual transaction data structure.
 type Header struct {
 	TimeStamp     int64  // TimeStamp is the Unix time when the block was created.
 	Data          []byte // Data contains the actual information stored in the block.
 	PrevBlockHash Hash   // PrevBlockHash is the hash of the preceding block in the chain.
 	Hash          Hash   // Hash is the SHA-256 hash of this block's header.
+	Nonce         int    // Nonce is the number used once to satisfy the Proof of Work condition.
 }
 
 // NewBlock creates and returns a new Block with the specified data and previous block hash.
-// It automatically sets the current timestamp and calculates the block's hash immediately upon creation.
+// It performs the Proof of Work mining process to find a valid hash and nonce before returning.
 func NewBlock(data string, prevBlockHash Hash) *Block {
 	h := &Header{
 		TimeStamp:     time.Now().Unix(),
 		Data:          []byte(data),
 		PrevBlockHash: prevBlockHash,
-		Hash:          nil, // Will be calculated below
+		Hash:          nil, // Will be calculated via Proof of Work
+		Nonce:         0,
 	}
 
-	h.Hash = h.CalculateHash()
+	// Create a temporary block wrapper to pass to the PoW engine
+	block := &Block{Header: h}
 
-	return &Block{
-		Header: h,
-	}
-}
+	// Initialize the Proof of Work engine
+	pow := NewProofOfWork(block)
 
-// CalculateHash generates a SHA-256 hash of the block header fields.
-// It combines the timestamp, data, and previous hash into a single string record
-// and returns the resulting SHA-256 sum as a slice.
-func (h *Header) CalculateHash() Hash {
-	record := fmt.Sprintf("%d%s%s", h.TimeStamp, h.Data, h.PrevBlockHash)
+	// Mine the block (this is a blocking operation)
+	nonce, hash := pow.Run()
 
-	hash := sha256.Sum256([]byte(record))
+	// Update the header with the winning nonce and hash
+	h.Hash = hash
+	h.Nonce = nonce
 
-	return hash[:]
+	return block
 }
 
 // String implements the fmt.Stringer interface.
 // It formats the block's details into a readable string with hex-encoded hashes.
 func (b *Block) String() string {
 	return fmt.Sprintf(
-		"Time: %d\nData: %s\nPrev: %x\nHash: %x\n",
+		"Time: %d\nData: %s\nPrev: %x\nHash: %x\nNonce: %d\n",
 		b.Header.TimeStamp,
 		b.Header.Data,
 		b.Header.PrevBlockHash,
 		b.Header.Hash,
+		b.Header.Nonce,
 	)
 }
