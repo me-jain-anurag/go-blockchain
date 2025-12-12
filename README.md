@@ -20,7 +20,7 @@ A simplified implementation of a Proof-of-Work Blockchain written in Go. This pr
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/me-jain-anurag/go-blockchain.git](https://github.com/me-jain-anurag/go-blockchain.git)
+    git clone https://github.com/me-jain-anurag/go-blockchain.git
     cd go-blockchain
     ```
 
