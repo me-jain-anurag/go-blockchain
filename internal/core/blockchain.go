@@ -101,6 +101,55 @@ func NewGenesisBlock() *Block {
 	return NewBlock("Genesis Block", Hash{})
 }
 
+// BlockchainIterator is a helper struct to traverse the blockchain.
+// It keeps track of the "current" hash it is looking at.
+type BlockchainIterator struct {
+	CurrentHash Hash
+	db			*badger.DB
+}
+
+// Iterator returns a new BlockchainIterator struct starting at the tip of the chain.
+func (bc *Blockchain) Iterator() *BlockchainIterator {
+	return &BlockchainIterator{
+		bc.LastHash,
+		bc.db,
+	}
+}
+
+// Next returns the next block from the chain (traversing backwards)
+// and advances the iterator to the previous block.
+// returns nil if there are no more blocks (Genesis reached).
+func (iter *BlockchainIterator) Next() *Block {
+	// Get the current block
+	var block *Block
+
+	// If we are already empty (Genesis prev hash is empty), stop.
+	if len(iter.CurrentHash) == 0 {
+		return nil
+	}
+
+	err := iter.db.View(func (txn *badger.Txn) error {
+		item, err := txn.Get(iter.CurrentHash)
+		if err != nil {
+			return err
+		}
+
+		// Deserialize the block
+		err = item.Value(func(val []byte) error {
+			block = DeserializeBlock(val)
+			return nil
+		})
+		return err
+	})
+
+	Handle(err)
+	
+	// Move the cursor backward to the previous block
+	iter.CurrentHash = block.Header.PrevBlockHash
+
+	return block
+}
+
 // Close terminates the database connection.
 // It is crucial to call this before the program exits to prevent data corruption.
 func (bc *Blockchain) Close() {

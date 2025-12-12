@@ -87,6 +87,25 @@ func (p *ProofOfWork) Run() (int, []byte) {
 	return nonce, hash[:]
 }
 
+// Validate performs a quick check to ensure the block's hash satisfies the mining difficulty.
+// Unlike Run() which searches for a nonce (CPU intensive), Validate() just checks
+// if the existing nonce and data result in a valid hash (Instant).
+// This is what other nodes in the network run to verify a block before accepting it.
+func (p *ProofOfWork) Validate() bool {
+	var hashInt big.Int
+
+	// 1. Re-create the data using the nonce stored in the block header
+	data := p.prepareData(p.block.Header.Nonce)
+
+	// 2. Hash the data
+	hash := sha256.Sum256(data)
+	hashInt.SetBytes(hash[:])
+
+	// 3. Check if the generated hash is less than the target difficulty
+	// valid = (hashInt < target)
+	return hashInt.Cmp(p.target) == -1
+}
+
 // IntToBytes is a utility function that converts an int64 to a byte slice.
 // It uses BigEndian encoding, which is standard for network protocols.
 func IntToBytes(num int64) []byte {
