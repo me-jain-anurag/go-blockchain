@@ -1,7 +1,10 @@
 package core
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"log"
 	"time"
 )
 
@@ -62,4 +65,37 @@ func (b *Block) String() string {
 		b.Header.Hash,
 		b.Header.Nonce,
 	)
+}
+
+// Serialize converts the Block structure into a byte slice.
+// This is necessary because the database can only store pure bytes, not Go structs.
+// It uses the encoding/gob package for efficient binary serialization.
+func (b *Block) Serialize() []byte {
+	var result bytes.Buffer
+	encoder := gob.NewEncoder(&result)
+
+	err := encoder.Encode(b)
+	Handle(err)
+
+	return result.Bytes()
+}
+
+// DeserializeBlock takes a byte slice and decodes it back into a Block struct.
+// It reverses the Serialize process.
+func DeserializeBlock(d []byte) *Block {
+	var block Block
+	decoder := gob.NewDecoder(bytes.NewReader(d))
+
+	err := decoder.Decode(&block)
+	Handle(err)
+
+	return &block
+}
+
+// Handle is a helper function to check for errors and panic if one occurs.
+// In a production app, we might handle this more gracefully, but for now, we stop execution.
+func Handle(err error) {
+	if err != nil {
+		log.Panic(err)
+	}
 }

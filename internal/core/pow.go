@@ -93,8 +93,6 @@ func IntToBytes(num int64) []byte {
 	buff := new(bytes.Buffer)
 	// Write the number into the buffer using BigEndian order
 	err := binary.Write(buff, binary.BigEndian, num)
-	if err != nil {
-		panic(err)
-	}
+	Handle(err)
 	return buff.Bytes()
 }

@@ -5,3 +5,6 @@ blockchain
 
 # OS specific
 .DS_Store
+
+# Database
+tmp/
